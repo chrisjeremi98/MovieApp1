@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -23,6 +24,7 @@ import android.widget.Toast;
 import com.example.asus.movieapp1.adapter.MoviesAdapter;
 import com.example.asus.movieapp1.api.Client;
 import com.example.asus.movieapp1.api.Service;
+import com.example.asus.movieapp1.data.FavoriteDbHelper;
 import com.example.asus.movieapp1.model.Movie;
 import com.example.asus.movieapp1.model.MoviesResponse;
 
@@ -41,6 +43,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     ProgressDialog pd;
     private SwipeRefreshLayout swipeContainer;
     public static final String LOG_TAG=MoviesAdapter.class.getName();
+
+    //database
+    private AppCompatActivity activity=MainActivity.this;
+    private FavoriteDbHelper favoriteDbHelper;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,15 +85,21 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     private void initViews(){
+//
+//        pd=new ProgressDialog(this);
+//        pd.setMessage("Mengambil Data.....");
+//        pd.setCancelable(false);
+//        pd.show();
 
-        pd=new ProgressDialog(this);
-        pd.setMessage("Fetching Movies.....");
-        pd.setCancelable(false);
-        pd.show();
+
 
         recyclerView= findViewById(R.id.recycler_view);
         movieList= new ArrayList<>();
         adapter=new MoviesAdapter(this, movieList);
+
+        favoriteDbHelper=new FavoriteDbHelper(activity);
+
+
 
         if (getActivity().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT){
 
@@ -98,6 +111,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         recyclerView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
+
+
 
         checkSortOrder();
 
@@ -127,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                         swipeContainer.setRefreshing(false);
 
                     }
-                    pd.dismiss();
+//                    pd.dismiss();
                 }
 
                 @Override
@@ -170,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                         swipeContainer.setRefreshing(false);
 
                     }
-                    pd.dismiss();
+//                    pd.dismiss();
                 }
 
                 @Override
@@ -228,15 +243,38 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 this.getString(R.string.pref_most_popular)
 
         );
-        if (sortOrder.equals(this.getString(R.string.pref_most_popular))){
+        if (sortOrder.equals(this.getString(R.string.pref_most_popular))) {
 
             Log.d(LOG_TAG, "Sorting by most popular");
             loadJSON();
-
+        } else if (sortOrder.equals(this.getString(R.string.favorite))){
+            Log.d(LOG_TAG, "Sorting favorite");
+            initViews2();
         } else {
             Log.d(LOG_TAG,"Sorting by vote average");
             loadJSON1();
         }
+    }
+
+    private void initViews2() {
+        recyclerView=(RecyclerView) findViewById(R.id.recycler_view);
+        movieList=new ArrayList<>();
+
+        adapter=new MoviesAdapter(this,movieList);
+        if (getActivity().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT){
+
+            recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
+        } else {
+            recyclerView.setLayoutManager(new GridLayoutManager(this,4));
+        }
+
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
+        recyclerView.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+        favoriteDbHelper=new FavoriteDbHelper(activity);
+
+        getAllFavorite();
+
     }
 
     @Override
@@ -247,5 +285,27 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         } else {
 
         }
+    }
+
+    private void getAllFavorite() {
+
+        new AsyncTask<Void,Void,Void>(){
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                movieList.clear();
+                movieList.addAll(favoriteDbHelper.getAllFavorite());
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+
+                adapter.notifyDataSetChanged();
+
+            }
+        }.execute();
+
     }
 }

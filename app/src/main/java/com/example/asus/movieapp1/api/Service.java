@@ -1,6 +1,7 @@
 package com.example.asus.movieapp1.api;
 
 import com.example.asus.movieapp1.model.MoviesResponse;
+import com.example.asus.movieapp1.model.ReviewResponse;
 import com.example.asus.movieapp1.model.TrailerResponse;
 
 import retrofit2.Call;
@@ -22,6 +23,9 @@ public interface Service {
 
     @GET("movie/{movie_id}/videos")
     Call<TrailerResponse> getMovieTrailer(@Path("movie_id") int id, @Query("api_key") String apiKey);
+
+    @GET("movie/{movie_id}/reviews")
+    Call<ReviewResponse> getMovieReview(@Path("movie_id") int id, @Query("api_key") String apiKey);
 
 
 

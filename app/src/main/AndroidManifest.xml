@@ -30,7 +30,6 @@
         <activity
             android:name=".SettingActivity"
             android:label="Setting" />
-        <activity android:name=".adapter.TrailerAdapter"></activity>
     </application>
 
 </manifest>
